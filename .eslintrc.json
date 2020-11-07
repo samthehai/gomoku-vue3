@@ -1,0 +1,11 @@
+{
+  "extends": [
+    "prettier",
+    "prettier/@typescript-eslint",
+    "prettier/babel",
+    "prettier/flowtype",
+    "prettier/standard",
+    "prettier/unicorn",
+    "prettier/vue"
+  ]
+}
