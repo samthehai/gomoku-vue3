@@ -224,6 +224,7 @@ export default class Game extends Vue {
     return 'Uh oh, you lost..';
   }
 
+  // eslint-disable-next-line class-methods-use-this
   get drawMsg(): string {
     return 'It was a draw..';
   }
@@ -317,6 +318,7 @@ export default class Game extends Vue {
     this.play();
   }
 
+  // eslint-disable-next-line class-methods-use-this
   whoStarts(): string {
     return `PLAYER_${Math.floor(Math.random() * 2 + 1)}`;
   }
@@ -600,6 +602,7 @@ export default class Game extends Vue {
     return bestScore;
   }
 
+  // eslint-disable-next-line class-methods-use-this
   isMovesLeft(board: string[][]): boolean {
     return board.some((row) => row.some((cell) => cell === ''));
   }
