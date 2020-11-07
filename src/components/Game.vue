@@ -51,7 +51,11 @@
         </div>
         <table class="boxes">
           <tr v-for="(line, i) in board.currentBoards" v-bind:key="i">
-            <td v-for="(cell, j) in line" v-bind:key="j" @click="playerTurn(i, j)">
+            <td
+              v-for="(cell, j) in line"
+              v-bind:key="j"
+              @click="playerTurn(i, j)"
+            >
               {{ cell }}
             </td>
           </tr>
@@ -159,409 +163,7 @@ const winPattern = [
   mounted() {
     this.initializeGame();
   },
-  computed: {
-    shoudShowGameTopBar(): boolean {
-      return ['PLAYING', 'END'].includes(this.phrase);
-    },
-    winMsg(): string {
-      if (!this.result.winner) {
-        return '';
-      }
-      const winnerNumber = this.result.winner === 'PLAYER_1' ? 1 : 2;
-      if (this.secondPlayer) {
-        return `Player ${winnerNumber} wins!! :D `;
-      }
-
-      return 'You Won!!!';
-    },
-    loseMsg(): string {
-      if (!this.result.winner) {
-        return '';
-      }
-      const winnerNumber = this.result.winner === 'PLAYER_1' ? 1 : 2;
-      if (this.secondPlayer) {
-        return `Player ${winnerNumber} wins!! :D `;
-      }
-
-      return 'Uh oh, you lost..';
-    },
-    drawMsg(): string {
-      return 'It was a draw..';
-    },
-    shouldShowDrawMsg(): boolean {
-      return this.phrase === 'END' && !this.result.winner;
-    },
-    shouldShowLoseMsg(): boolean {
-      return this.phrase === 'END' && this.result.winner === 'PLAYER_2';
-    },
-    shouldShowWinMsg(): boolean {
-      return this.phrase === 'END' && this.result.winner === 'PLAYER_1';
-    },
-    playerOneName(): string {
-      return `${this.player.PLAYER_1.name}(${this.player.PLAYER_1.symbol})`;
-    },
-    playerOneTurnMsg(): string {
-      if (this.secondPlayer) {
-        return 'Go Player 1!';
-      }
-
-      return 'Your turn!';
-    },
-    shouldShowPlayerOneTurn(): boolean {
-      return this.phrase === 'PLAYING' && this.turn === 'PLAYER_1';
-    },
-    playerTwoName(): string {
-      if (this.secondPlayer) {
-        return `${this.player.PLAYER_2.name}(${this.player.PLAYER_2.symbol})`;
-      }
-
-      return `${this.computerAI.toLowerCase()}(${this.player.PLAYER_2.symbol})`;
-    },
-    playerTwoTurnMsg(): string {
-      if (this.secondPlayer) {
-        return 'Go Player 2!';
-      }
-
-      return "Computer's turn";
-    },
-    shouldShowPlayerTwoTurn(): boolean {
-      return this.phrase === 'PLAYING' && this.turn === 'PLAYER_2';
-    },
-  },
-  methods: {
-    choseOnePlayer() {
-      this.secondPlayer = false;
-      this.toSelectComputer();
-    },
-    choseSecondPlayer() {
-      this.secondPlayer = true;
-      this.toGameStarter();
-    },
-    toGameStarter() {
-      this.phrase = 'GAME_STARTER';
-    },
-    toSelectComputer() {
-      this.phrase = 'GAME_SELECT_COM';
-    },
-    toGameChoice() {
-      this.phrase = 'GAME_CHOICE';
-    },
-    initializeGame(): void {
-      this.board = initializeBoardValue();
-      this.result = initializeResult();
-      // this.drawBoard();
-    },
-    firstGame(playerOneSymbol: PlayerSymbols): void {
-      this.player.PLAYER_1.symbol = playerOneSymbol;
-      this.player.PLAYER_2.symbol = PLAYER_SYMBOLS.find(
-        (x) => x !== playerOneSymbol,
-      );
-      if (this.secondPlayer) {
-        this.player.PLAYER_2.name = 'player 2';
-      }
-      this.turn = this.whoStarts();
-      this.play();
-    },
-    whoStarts(): string {
-      return `PLAYER_${Math.floor(Math.random() * 2 + 1)}`;
-    },
-    selectComputerAI(name: ComputerAI): void {
-      this.computerAI = name;
-      this.toGameStarter();
-    },
-    playerTurn(x: number, y: number): void {
-      if (
-        this.board.currentBoards[x][y] === ''
-        && this.phrase === 'PLAYING'
-        && (this.turn === 'PLAYER_1'
-          || (this.turn === 'PLAYER_2' && this.secondPlayer))
-      ) {
-        const { symbol } = this.player[this.turn];
-        const newBoards = this.board.currentBoards.map(
-          (row: string[], rowIndex: number) => {
-            if (x === rowIndex) {
-              return row.map((cell, cellIndex) => {
-                if (y === cellIndex) return symbol;
-                return cell;
-              });
-            }
-            return row;
-          },
-        );
-
-        this.updateCurrentBoards(newBoards);
-        this.endTurn(symbol);
-      }
-    },
-    updateCurrentBoards(newBoards: string[][]): void {
-      this.board.numFilledIn += 1;
-      this.board.currentBoards = newBoards;
-    },
-    play(): void {
-      this.phrase = 'PLAYING';
-      setTimeout(() => {
-        if (!this.secondPlayer && this.turn === 'PLAYER_2') {
-          this.computerTurn();
-          this.turn = 'PLAYER_1';
-        }
-      }, 0);
-    },
-    endTurn(): void {
-      if (this.phrase !== 'PLAYING') {
-        return;
-      }
-
-      const winner = this.checkWin(this.board.currentBoards);
-      if (winner) {
-        this.phrase = 'END';
-        this.result = { ...this.result, winner };
-        this.updateScore(winner);
-        return;
-      }
-
-      if (this.board.numFilledIn >= BOARD_LENGTH * BOARD_LENGTH) {
-        this.phrase = 'END';
-        return;
-      }
-
-      if (this.turn === 'PLAYER_1') {
-        this.turn = 'PLAYER_2';
-        setTimeout(() => {
-          if (!this.secondPlayer) {
-            this.computerTurn();
-            this.endTurn(this.player.PLAYER_2.symbol);
-          }
-        }, 0);
-      } else if (this.turn === 'PLAYER_2') {
-        this.turn = 'PLAYER_1';
-      }
-    },
-    updateScore(winner: Player): void {
-      if (winner) {
-        this.player[winner].score += 1;
-      }
-    },
-    checkWin(board: string[][]): Player | null {
-      let winnerSymbol = '';
-      // eslint-disable-next-line max-len
-      const isWin = board.some(
-        (row, indexRow) =>
-          // eslint-disable-next-line implicit-arrow-linebreak
-          row.some(
-            (cell, indexCell) =>
-              // eslint-disable-next-line implicit-arrow-linebreak
-              winPattern.some((pattern) => {
-                const symbol = board[indexRow][indexCell];
-
-                if (symbol === '') return false;
-
-                const isWinLocal2 = pattern.reduce((result, item) => {
-                  const x = indexRow + item[0];
-                  const y = indexCell + item[1];
-                  if (
-                    x >= BOARD_LENGTH
-                    || x < 0
-                    || y >= BOARD_LENGTH
-                    || y < 0
-                  ) {
-                    return false;
-                  }
-                  return result && board[x][y] === symbol;
-                }, true);
-
-                if (isWinLocal2) {
-                  winnerSymbol = symbol;
-                }
-
-                return isWinLocal2;
-                // eslint-disable-next-line comma-dangle
-              })
-            // eslint-disable-next-line function-paren-newline
-          ),
-        // eslint-disable-next-line function-paren-newline
-      );
-
-      if (!isWin) {
-        return null;
-      }
-
-      return winnerSymbol === this.player.PLAYER_1.symbol
-        ? 'PLAYER_1'
-        : 'PLAYER_2';
-    },
-    computerTurn(): void {
-      let nextMove: { x: number; y: number } | null = null;
-      nextMove = this.findBestMove(this.board.currentBoards);
-
-      if (!nextMove) {
-        return;
-      }
-
-      const newBoard = this.board.currentBoards.map(
-        (row: string[], rowIndex: number) => {
-          if (nextMove?.x === rowIndex) {
-            return row.map((cell, cellIndex) => {
-              if (nextMove?.y === cellIndex) {
-                return this.player.PLAYER_2.symbol;
-              }
-
-              return cell;
-            });
-          }
-          return row;
-          // eslint-disable-next-line comma-dangle
-        }
-      );
-      this.updateCurrentBoards(newBoard);
-    },
-    findBestMove(board: string[][]): { x: number; y: number } | null {
-      let bestMove = null;
-      let bestScore = -1000000;
-
-      board.forEach((row, indexRow) => {
-        row.forEach((_, indexCell) => {
-          if (board[indexRow][indexCell] === '') {
-            const newBoard = board.map((row2, x) => {
-              if (indexRow === x) {
-                return row2.map((cell, y) => {
-                  if (indexCell === y) {
-                    return this.player.PLAYER_2.symbol;
-                  }
-
-                  return cell;
-                });
-              }
-
-              return row2;
-            });
-
-            const newScore = this.minimaxLEN(
-              newBoard,
-              0,
-              false,
-              -1000000,
-              1000000,
-            );
-
-            if (newScore > bestScore) {
-              bestScore = newScore;
-              bestMove = { x: indexRow, y: indexCell };
-            }
-          }
-        });
-      });
-
-      return bestMove;
-    },
-    minimaxLEN(
-      board: string[][],
-      depth: number,
-      isMax: boolean,
-      alpha: number,
-      beta: number,
-    ): number {
-      const winner = this.checkWin(board);
-      if (winner === 'PLAYER_2') return 10 - depth;
-      if (winner === 'PLAYER_1') return -10 + depth;
-
-      if (!this.isMovesLeft(board)) return 4;
-      if (depth >= 2) return 2;
-
-      if (isMax) {
-        let bestScore = -1000000;
-
-        for (let r = 0; r < BOARD_LENGTH; r += 1) {
-          for (let c = 0; c < BOARD_LENGTH; c += 1) {
-            if (board[r][c] === '') {
-              const newBoard = board.map((row, x) => {
-                if (r === x) {
-                  return row.map((cell, y) => {
-                    if (c === y) {
-                      return this.player.PLAYER_2.symbol;
-                    }
-
-                    return cell;
-                  });
-                }
-
-                return row;
-              });
-
-              const newScore = this.minimaxLEN(
-                newBoard,
-                depth + 1,
-                !isMax,
-                alpha,
-                beta,
-              );
-
-              if (newScore > bestScore) bestScore = newScore;
-              // eslint-disable-next-line no-param-reassign
-              if (bestScore > alpha) alpha = bestScore;
-              if (alpha >= beta) {
-                return bestScore;
-              }
-            }
-          }
-        }
-
-        return bestScore;
-      }
-      let bestScore = 1000000;
-
-      for (let r = 0; r < BOARD_LENGTH; r += 1) {
-        for (let c = 0; c < BOARD_LENGTH; c += 1) {
-          if (board[r][c] === '') {
-            const newBoard = board.map((row, x) => {
-              if (r === x) {
-                return row.map((cell, y) => {
-                  if (c === y) {
-                    return this.player.PLAYER_1.symbol;
-                  }
-
-                  return cell;
-                });
-              }
-
-              return row;
-            });
-
-            const newScore = this.minimaxLEN(
-              newBoard,
-              depth + 1,
-              !isMax,
-              alpha,
-              beta,
-            );
-
-            if (newScore < bestScore) bestScore = newScore;
-            // eslint-disable-next-line no-param-reassign
-            if (bestScore < beta) beta = bestScore;
-            if (alpha >= beta) return bestScore;
-          }
-        }
-      }
-
-      return bestScore;
-    },
-    isMovesLeft(board: string[][]): boolean {
-      return board.some((row) => row.some((cell) => cell === ''));
-    },
-    resetGame(): void {
-      this.timeOuts.forEach((timer: number|undefined) => clearTimeout(timer));
-      this.player.PLAYER_1.score = 0;
-      this.player.PLAYER_2.score = 0;
-      this.board = { ...this.board, ...initializeBoardValue() };
-      this.phrase = 'GAME_CHOICE';
-      this.turn = this.whoStarts();
-    },
-    reset(): void {
-      this.timeOuts.forEach((timer: number|undefined) => clearTimeout(timer));
-      this.initializeGame();
-      this.turn = this.whoStarts();
-      this.play();
-    },
-  },
+  methods: {},
 })
 export default class Game extends Vue {
   timeOuts = [];
@@ -587,9 +189,439 @@ export default class Game extends Vue {
     },
   } as { [key: string]: PlayerInfo };
 
-  board = initializeBoardValue();
+  board = initializeBoardValue() as {
+    numFilledIn: number;
+    currentBoards: string[][];
+  };
 
-  result = initializeResult();
+  result = initializeResult() as { winner: Player | null };
+
+  get shoudShowGameTopBar(): boolean {
+    return ['PLAYING', 'END'].includes(this.phrase);
+  }
+
+  get winMsg(): string {
+    if (!this.result.winner) {
+      return '';
+    }
+    const winnerNumber = this.result.winner === 'PLAYER_1' ? 1 : 2;
+    if (this.secondPlayer) {
+      return `Player ${winnerNumber} wins!! :D `;
+    }
+
+    return 'You Won!!!';
+  }
+
+  get loseMsg(): string {
+    if (!this.result.winner) {
+      return '';
+    }
+    const winnerNumber = this.result.winner === 'PLAYER_1' ? 1 : 2;
+    if (this.secondPlayer) {
+      return `Player ${winnerNumber} wins!! :D `;
+    }
+
+    return 'Uh oh, you lost..';
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  get drawMsg(): string {
+    return 'It was a draw..';
+  }
+
+  get shouldShowDrawMsg(): boolean {
+    return this.phrase === 'END' && !this.result.winner;
+  }
+
+  get shouldShowLoseMsg(): boolean {
+    return this.phrase === 'END' && this.result.winner === 'PLAYER_2';
+  }
+
+  get shouldShowWinMsg(): boolean {
+    return this.phrase === 'END' && this.result.winner === 'PLAYER_1';
+  }
+
+  get playerOneName(): string {
+    return `${this.player.PLAYER_1.name}(${this.player.PLAYER_1.symbol})`;
+  }
+
+  get playerOneTurnMsg(): string {
+    if (this.secondPlayer) {
+      return 'Go Player 1!';
+    }
+
+    return 'Your turn!';
+  }
+
+  get shouldShowPlayerOneTurn(): boolean {
+    return this.phrase === 'PLAYING' && this.turn === 'PLAYER_1';
+  }
+
+  get playerTwoName(): string {
+    if (this.secondPlayer) {
+      return `${this.player.PLAYER_2.name}(${this.player.PLAYER_2.symbol})`;
+    }
+
+    return `${this.computerAI.toLowerCase()}(${this.player.PLAYER_2.symbol})`;
+  }
+
+  get playerTwoTurnMsg(): string {
+    if (this.secondPlayer) {
+      return 'Go Player 2!';
+    }
+
+    return "Computer's turn";
+  }
+
+  get shouldShowPlayerTwoTurn(): boolean {
+    return this.phrase === 'PLAYING' && this.turn === 'PLAYER_2';
+  }
+
+  choseOnePlayer() {
+    this.secondPlayer = false;
+    this.toSelectComputer();
+  }
+
+  choseSecondPlayer() {
+    this.secondPlayer = true;
+    this.toGameStarter();
+  }
+
+  toGameStarter() {
+    this.phrase = 'GAME_STARTER';
+  }
+
+  toSelectComputer() {
+    this.phrase = 'GAME_SELECT_COM';
+  }
+
+  toGameChoice() {
+    this.phrase = 'GAME_CHOICE';
+  }
+
+  initializeGame(): void {
+    this.board = initializeBoardValue() as {
+      numFilledIn: number;
+      currentBoards: string[][];
+    };
+    this.result = initializeResult() as { winner: Player | null };
+  }
+
+  firstGame(playerOneSymbol: PlayerSymbols): void {
+    this.player.PLAYER_1.symbol = playerOneSymbol;
+    this.player.PLAYER_2.symbol =
+      PLAYER_SYMBOLS.find((x) => x !== playerOneSymbol) || '';
+    if (this.secondPlayer) {
+      this.player.PLAYER_2.name = 'player 2';
+    }
+    this.turn = this.whoStarts();
+    this.play();
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  whoStarts(): string {
+    return `PLAYER_${Math.floor(Math.random() * 2 + 1)}`;
+  }
+
+  selectComputerAI(name: ComputerAI): void {
+    this.computerAI = name;
+    this.toGameStarter();
+  }
+
+  playerTurn(x: number, y: number): void {
+    if (
+      this.board.currentBoards[x][y] === '' &&
+      this.phrase === 'PLAYING' &&
+      (this.turn === 'PLAYER_1' ||
+        (this.turn === 'PLAYER_2' && this.secondPlayer))
+    ) {
+      const { symbol } = this.player[this.turn];
+      const newBoards = this.board.currentBoards.map(
+        (row: string[], rowIndex: number) => {
+          if (x === rowIndex) {
+            return row.map((cell, cellIndex) => {
+              if (y === cellIndex) return symbol;
+              return cell;
+            });
+          }
+          return row;
+        },
+      );
+
+      this.updateCurrentBoards(newBoards);
+      this.endTurn();
+    }
+  }
+
+  updateCurrentBoards(newBoards: string[][]): void {
+    this.board.numFilledIn += 1;
+    this.board.currentBoards = newBoards;
+  }
+
+  play(): void {
+    this.phrase = 'PLAYING';
+    setTimeout(() => {
+      if (!this.secondPlayer && this.turn === 'PLAYER_2') {
+        this.computerTurn();
+        this.turn = 'PLAYER_1';
+      }
+    }, 0);
+  }
+
+  endTurn(): void {
+    if (this.phrase !== 'PLAYING') {
+      return;
+    }
+
+    const winner = this.checkWin(this.board.currentBoards);
+    if (winner) {
+      this.phrase = 'END';
+      this.result = { ...this.result, winner };
+      this.updateScore(winner);
+      return;
+    }
+
+    if (this.board.numFilledIn >= BOARD_LENGTH * BOARD_LENGTH) {
+      this.phrase = 'END';
+      return;
+    }
+
+    if (this.turn === 'PLAYER_1') {
+      this.turn = 'PLAYER_2';
+      setTimeout(() => {
+        if (!this.secondPlayer) {
+          this.computerTurn();
+          this.endTurn();
+        }
+      }, 0);
+    } else if (this.turn === 'PLAYER_2') {
+      this.turn = 'PLAYER_1';
+    }
+  }
+
+  updateScore(winner: Player): void {
+    if (winner) {
+      this.player[winner].score += 1;
+    }
+  }
+
+  checkWin(board: string[][]): Player | null {
+    let winnerSymbol = '';
+    // eslint-disable-next-line max-len
+    const isWin = board.some((row, indexRow) =>
+      // eslint-disable-next-line implicit-arrow-linebreak
+      row.some((cell, indexCell) =>
+        // eslint-disable-next-line implicit-arrow-linebreak
+        winPattern.some((pattern) => {
+          const symbol = board[indexRow][indexCell];
+
+          if (symbol === '') return false;
+
+          const isWinLocal2 = pattern.reduce((result, item) => {
+            const x = indexRow + item[0];
+            const y = indexCell + item[1];
+            if (x >= BOARD_LENGTH || x < 0 || y >= BOARD_LENGTH || y < 0) {
+              return false;
+            }
+            return result && board[x][y] === symbol;
+          }, true);
+
+          if (isWinLocal2) {
+            winnerSymbol = symbol;
+          }
+
+          return isWinLocal2;
+        }),
+      ),
+    );
+
+    if (!isWin) {
+      return null;
+    }
+
+    return winnerSymbol === this.player.PLAYER_1.symbol
+      ? 'PLAYER_1'
+      : 'PLAYER_2';
+  }
+
+  computerTurn(): void {
+    let nextMove: { x: number; y: number } | null = null;
+    nextMove = this.findBestMove(this.board.currentBoards);
+
+    if (!nextMove) {
+      return;
+    }
+
+    const newBoard = this.board.currentBoards.map(
+      (row: string[], rowIndex: number) => {
+        if (nextMove?.x === rowIndex) {
+          return row.map((cell, cellIndex) => {
+            if (nextMove?.y === cellIndex) {
+              return this.player.PLAYER_2.symbol;
+            }
+
+            return cell;
+          });
+        }
+        return row;
+        // eslint-disable-next-line comma-dangle
+      },
+    );
+    this.updateCurrentBoards(newBoard);
+  }
+
+  findBestMove(board: string[][]): { x: number; y: number } | null {
+    let bestMove = null;
+    let bestScore = -1000000;
+
+    board.forEach((row, indexRow) => {
+      row.forEach((_, indexCell) => {
+        if (board[indexRow][indexCell] === '') {
+          const newBoard = board.map((row2, x) => {
+            if (indexRow === x) {
+              return row2.map((cell, y) => {
+                if (indexCell === y) {
+                  return this.player.PLAYER_2.symbol;
+                }
+
+                return cell;
+              });
+            }
+
+            return row2;
+          });
+
+          const newScore = this.minimaxLEN(
+            newBoard,
+            0,
+            false,
+            -1000000,
+            1000000,
+          );
+
+          if (newScore > bestScore) {
+            bestScore = newScore;
+            bestMove = { x: indexRow, y: indexCell };
+          }
+        }
+      });
+    });
+
+    return bestMove;
+  }
+
+  minimaxLEN(
+    board: string[][],
+    depth: number,
+    isMax: boolean,
+    alpha: number,
+    beta: number,
+  ): number {
+    const winner = this.checkWin(board);
+    if (winner === 'PLAYER_2') return 10 - depth;
+    if (winner === 'PLAYER_1') return -10 + depth;
+
+    if (!this.isMovesLeft(board)) return 4;
+    if (depth >= 2) return 2;
+
+    if (isMax) {
+      let bestScore = -1000000;
+
+      for (let r = 0; r < BOARD_LENGTH; r += 1) {
+        for (let c = 0; c < BOARD_LENGTH; c += 1) {
+          if (board[r][c] === '') {
+            const newBoard = board.map((row, x) => {
+              if (r === x) {
+                return row.map((cell, y) => {
+                  if (c === y) {
+                    return this.player.PLAYER_2.symbol;
+                  }
+
+                  return cell;
+                });
+              }
+
+              return row;
+            });
+
+            const newScore = this.minimaxLEN(
+              newBoard,
+              depth + 1,
+              !isMax,
+              alpha,
+              beta,
+            );
+
+            if (newScore > bestScore) bestScore = newScore;
+            // eslint-disable-next-line no-param-reassign
+            if (bestScore > alpha) alpha = bestScore;
+            if (alpha >= beta) {
+              return bestScore;
+            }
+          }
+        }
+      }
+
+      return bestScore;
+    }
+    let bestScore = 1000000;
+
+    for (let r = 0; r < BOARD_LENGTH; r += 1) {
+      for (let c = 0; c < BOARD_LENGTH; c += 1) {
+        if (board[r][c] === '') {
+          const newBoard = board.map((row, x) => {
+            if (r === x) {
+              return row.map((cell, y) => {
+                if (c === y) {
+                  return this.player.PLAYER_1.symbol;
+                }
+
+                return cell;
+              });
+            }
+
+            return row;
+          });
+
+          const newScore = this.minimaxLEN(
+            newBoard,
+            depth + 1,
+            !isMax,
+            alpha,
+            beta,
+          );
+
+          if (newScore < bestScore) bestScore = newScore;
+          // eslint-disable-next-line no-param-reassign
+          if (bestScore < beta) beta = bestScore;
+          if (alpha >= beta) return bestScore;
+        }
+      }
+    }
+
+    return bestScore;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  isMovesLeft(board: string[][]): boolean {
+    return board.some((row) => row.some((cell) => cell === ''));
+  }
+
+  resetGame(): void {
+    this.timeOuts.forEach((timer: number | undefined) => clearTimeout(timer));
+    this.player.PLAYER_1.score = 0;
+    this.player.PLAYER_2.score = 0;
+    this.board = { ...this.board, ...initializeBoardValue() };
+    this.phrase = 'GAME_CHOICE';
+    this.turn = this.whoStarts();
+  }
+
+  reset(): void {
+    this.timeOuts.forEach((timer: number | undefined) => clearTimeout(timer));
+    this.initializeGame();
+    this.turn = this.whoStarts();
+    this.play();
+  }
 }
 </script>
 
