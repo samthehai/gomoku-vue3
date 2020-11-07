@@ -627,18 +627,6 @@ export default class Game extends Vue {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-/* reset css */
-body,
-html {
-  width: 100%;
-  height: 100%;
-}
-
-li {
-  list-style: none;
-}
-
-/*****/
 .outer-container {
   background: rgba(255, 255, 255, 1);
   box-shadow: inset -1px 1px 7px rgba(0, 0, 0, 0.2),
