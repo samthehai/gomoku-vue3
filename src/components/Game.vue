@@ -66,7 +66,7 @@
 </template>
 
 <script lang="ts">
-import { Vue, Options } from 'vue-class-component';
+import { Vue } from 'vue-class-component';
 
 const GAME_PHRASES = [
   'GAME_CHOICE',
@@ -159,13 +159,11 @@ const winPattern = [
   ],
 ];
 
-@Options({
-  mounted() {
-    this.initializeGame();
-  },
-  methods: {},
-})
 export default class Game extends Vue {
+  mounted(): void {
+    this.initializeGame();
+  }
+
   timeOuts = [];
 
   phrase = 'GAME_CHOICE' as GamePhrases;
