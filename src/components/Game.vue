@@ -635,7 +635,7 @@ export default class Game extends Vue {
   border-radius: 10px;
   width: 600px;
   height: 600px;
-  margin: 10% auto;
+  margin: 0 auto;
   padding: 40px 0 0;
 }
 
