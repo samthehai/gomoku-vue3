@@ -14,12 +14,10 @@
     "sourceMap": true,
     "baseUrl": ".",
     "keyofStringsOnly": true,
-    "types": [
-      "webpack-env"
-    ],
+    "types": ["webpack-env"],
     "paths": {
       "@/*": [
-        "src/*"
+        "./src/*"
       ]
     },
     "lib": [

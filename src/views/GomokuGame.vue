@@ -67,30 +67,19 @@
 
 <script lang="ts">
 import { Vue } from 'vue-class-component';
-
-const GAME_PHRASES = [
-  'GAME_CHOICE',
-  'GAME_STARTER',
-  'GAME_SELECT_COM',
-  'PLAYING',
-  'END',
-];
-type GamePhrases = typeof GAME_PHRASES[number];
-
-const PLAYER_SYMBOLS = ['X', 'O'];
-type PlayerSymbols = typeof PLAYER_SYMBOLS[number];
-
-type PlayerInfo = {
-  name: string;
-  symbol: PlayerSymbols;
-  score: number;
-};
-
-const PLAYERS = ['PLAYER_1', 'PLAYER_2'];
-type Player = typeof PLAYERS[number];
-
-const COMPUTER_AIS = ['PO', 'LEN'];
-type ComputerAI = typeof COMPUTER_AIS[number];
+import {
+  // eslint-disable-next-line no-unused-vars
+  GamePhrases,
+  // eslint-disable-next-line no-unused-vars
+  PlayerSymbols,
+  // eslint-disable-next-line no-unused-vars
+  PlayerInfo,
+  // eslint-disable-next-line no-unused-vars
+  Player,
+  // eslint-disable-next-line no-unused-vars
+  ComputerAgent,
+} from '@/@types/globals.d';
+import { PLAYER_SYMBOLS } from '@/lib/constants';
 
 const BOARD_LENGTH = 19;
 
@@ -159,7 +148,7 @@ const winPattern = [
   ],
 ];
 
-export default class Game extends Vue {
+export default class GomokuGame extends Vue {
   mounted(): void {
     this.initializeGame();
   }
@@ -172,7 +161,7 @@ export default class Game extends Vue {
 
   turn = 'PLAYER_1' as Player;
 
-  computerAI = 'PO' as ComputerAI;
+  computerAI = 'PO' as ComputerAgent;
 
   player = {
     PLAYER_1: {
@@ -321,7 +310,7 @@ export default class Game extends Vue {
     return `PLAYER_${Math.floor(Math.random() * 2 + 1)}`;
   }
 
-  selectComputerAI(name: ComputerAI): void {
+  selectComputerAI(name: ComputerAgent): void {
     this.computerAI = name;
     this.toGameStarter();
   }
