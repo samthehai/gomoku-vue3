@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
-import GomokuGame from '../views/GomokuGame.vue';
+import Gomoku from '../views/Gomoku.vue';
 import Home from '../views/Home.vue';
 
 const routes: Array<any> = [
@@ -11,7 +11,7 @@ const routes: Array<any> = [
   {
     path: "/gomoku",
     name: "Gomoku",
-    component: GomokuGame,
+    component: Gomoku,
   },
 ];
 

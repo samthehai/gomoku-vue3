@@ -1,72 +1,55 @@
 <template>
   <div id="game" class="outer-container">
-    <div v-if="shoudShowGameTopBar">
-      <button class="hard-reset" @click="resetGame">Reset All</button>
-      <p class="score-1">
-        <span class="points"> {{ player['PLAYER_1'].score }} </span
-        ><span class="name">{{ playerOneName }}</span>
-      </p>
-      <i class="points-divider">&#124;</i>
-      <p class="score-2">
-        <span class="points">{{ player['PLAYER_2'].score }}</span
-        ><span class="name">{{ playerTwoName }}</span>
-      </p>
-      <div v-if="shouldShowPlayerOneTurn" class="player-one-turn">
-        <p>{{ playerOneTurnMsg }}</p>
-      </div>
-      <div v-if="shouldShowPlayerTwoTurn" class="player-two-turn">
-        <p>{{ playerTwoTurnMsg }}</p>
-      </div>
-    </div>
+    <InformationBar
+      v-if="shoudShowGameTopBar"
+      :infos="playerScores"
+      @click-hard-reset="resetGame"
+    />
     <div class="board-container">
-      <div v-if="phrase == 'GAME_SELECT_COM'" class="game-choice">
-        <p>Choose AI?</p>
-        <button class="one-player" @click="selectComputerAI('PO')">Po</button>
-        <button class="two-player" @click="selectComputerAI('LEN')">Len</button>
-      </div>
-      <div v-if="phrase == 'GAME_STARTER'" class="game-starter">
-        <p>Choose X or O?</p>
-        <button class="choose-x" @click="firstGame('X')">X</button>
-        <button class="choose-o" @click="firstGame('O')">O</button>
-        <button class="back-button" @click="toGameChoice">
-          <i class="fa fa-arrow-left"></i> Back
-        </button>
-      </div>
-      <div v-if="phrase == 'GAME_CHOICE'" class="game-choice">
-        <p>Select</p>
-        <button class="one-player" @click="choseOnePlayer">One Player</button>
-        <button class="two-player" @click="choseSecondPlayer">
-          Two Player
-        </button>
-      </div>
-      <div class="game-board">
-        <div v-if="shouldShowDrawMsg" class="draw-message" @click="reset">
-          <p>{{ drawMsg }}</p>
-        </div>
-        <div v-if="shouldShowLoseMsg" class="lose-message" @click="reset">
-          <p>{{ loseMsg }}</p>
-        </div>
-        <div v-if="shouldShowWinMsg" class="win-message" @click="reset">
-          <p>{{ winMsg }}</p>
-        </div>
-        <table class="boxes">
-          <tr v-for="(line, i) in board.currentBoards" v-bind:key="i">
-            <td
-              v-for="(cell, j) in line"
-              v-bind:key="j"
-              @click="playerTurn(i, j)"
-            >
-              {{ cell }}
-            </td>
-          </tr>
-        </table>
+      <SelectOptions
+        v-if="phrase == 'GAME_CHOICE'"
+        title="Select Mode"
+        :options="modeOptions"
+        @click-item="chooseMode"
+      />
+      <SelectOptions
+        v-if="phrase == 'GAME_STARTER'"
+        title="Choose X or O?"
+        backButton="display"
+        :options="symbolOptions"
+        @click-item="firstGame"
+        @click-back="toGameChoice"
+      />
+      <SelectOptions
+        v-if="phrase == 'GAME_SELECT_COM'"
+        title="Choose Computer Agent"
+        backButton="display"
+        :options="computerAgentOptions"
+        @click-item="selectComputerAI"
+        @click-back="toGameChoice"
+      />
+
+      <div v-if="shouldShowGameBoard" class="game-board">
+        <BoardView
+          :board="board.currentBoards"
+          :game-end-message="gameEndMessage"
+          @click-reset="reset"
+          @click-cell="playerTurn"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { Vue } from 'vue-class-component';
+import { Vue, Options } from 'vue-class-component';
+import BoardView from '@/components/BoardView.vue';
+// eslint-disable-next-line no-unused-vars
+import SelectOptions, { ViewOption } from '@/components/SelectOptions.vue';
+import InformationBar, {
+  // eslint-disable-next-line no-unused-vars
+  InformationBarData,
+} from '@/components/InformationBar.vue';
 import {
   // eslint-disable-next-line no-unused-vars
   GamePhrases,
@@ -78,17 +61,21 @@ import {
   Player,
   // eslint-disable-next-line no-unused-vars
   ComputerAgent,
+  // eslint-disable-next-line no-unused-vars
+  GameMode,
 } from '@/@types/globals.d';
 import { PLAYER_SYMBOLS } from '@/lib/constants';
 
 const BOARD_LENGTH = 19;
+const EMPTY_CELL = ' ';
+const EMPTY_STRING = '';
 
 const inintializeBoardCells = (): string[][] => {
   const board: string[][] = [];
   for (let i = 0; i < BOARD_LENGTH; i += 1) {
     board[i] = [];
     for (let j = 0; j < BOARD_LENGTH; j += 1) {
-      board[i][j] = '';
+      board[i][j] = EMPTY_CELL;
     }
   }
   return board;
@@ -148,7 +135,50 @@ const winPattern = [
   ],
 ];
 
-export default class GomokuGame extends Vue {
+const ModeOptions: ViewOption[] = [
+  {
+    text: 'One Player',
+    value: 'ONE_PLAYER' as GameMode,
+  },
+  {
+    text: 'Two Player',
+    value: 'TWO_PLAYER' as GameMode,
+  },
+];
+
+const SymbolOptions: ViewOption[] = [
+  {
+    text: 'X',
+    value: 'X' as PlayerSymbols,
+  },
+  {
+    text: 'O',
+    value: 'O' as PlayerSymbols,
+  },
+];
+
+const ComputerAgentOptions: ViewOption[] = [
+  {
+    text: 'Po',
+    value: 'PO' as ComputerAgent,
+  },
+  {
+    text: 'Len',
+    value: 'LEN' as ComputerAgent,
+  },
+];
+
+@Options({
+  // Specify `components` option.
+  // See Vue.js docs for all available options:
+  // https://vuejs.org/v2/api/#Options-Data
+  components: {
+    BoardView,
+    SelectOptions,
+    InformationBar,
+  },
+})
+export default class Gomoku extends Vue {
   mounted(): void {
     this.initializeGame();
   }
@@ -165,12 +195,12 @@ export default class GomokuGame extends Vue {
 
   player = {
     PLAYER_1: {
-      name: 'player 1',
+      name: 'Player1',
       symbol: 'O', // default is O
       score: 0,
     },
     PLAYER_2: {
-      name: 'computer',
+      name: 'Computer',
       symbol: 'X', // default is X
       score: 0,
     },
@@ -183,65 +213,59 @@ export default class GomokuGame extends Vue {
 
   result = initializeResult() as { winner: Player | null };
 
+  get playerScores(): InformationBarData[] {
+    return [
+      {
+        text: 'Score',
+        lists: [
+          {
+            text: this.playerOneName,
+            value: this.player.PLAYER_1.score,
+          },
+          {
+            text: this.playerTwoName,
+            value: this.player.PLAYER_2.score,
+          },
+        ],
+      },
+      {
+        text: this.turnStatus,
+        lists: [],
+      },
+    ];
+  }
+
   get shoudShowGameTopBar(): boolean {
     return ['PLAYING', 'END'].includes(this.phrase);
   }
 
-  get winMsg(): string {
-    if (!this.result.winner) {
-      return '';
+  get shouldShowGameBoard(): boolean {
+    return ['PLAYING', 'END'].includes(this.phrase);
+  }
+
+  get gameEndMessage(): string {
+    if (this.phrase !== 'END') {
+      return EMPTY_STRING;
     }
+
+    if (!this.result.winner) {
+      return 'It was a draw..';
+    }
+
     const winnerNumber = this.result.winner === 'PLAYER_1' ? 1 : 2;
     if (this.secondPlayer) {
       return `Player ${winnerNumber} wins!! :D `;
+    }
+
+    if (this.result.winner === 'PLAYER_2') {
+      return 'Uh oh, you lost..';
     }
 
     return 'You Won!!!';
   }
 
-  get loseMsg(): string {
-    if (!this.result.winner) {
-      return '';
-    }
-    const winnerNumber = this.result.winner === 'PLAYER_1' ? 1 : 2;
-    if (this.secondPlayer) {
-      return `Player ${winnerNumber} wins!! :D `;
-    }
-
-    return 'Uh oh, you lost..';
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  get drawMsg(): string {
-    return 'It was a draw..';
-  }
-
-  get shouldShowDrawMsg(): boolean {
-    return this.phrase === 'END' && !this.result.winner;
-  }
-
-  get shouldShowLoseMsg(): boolean {
-    return this.phrase === 'END' && this.result.winner === 'PLAYER_2';
-  }
-
-  get shouldShowWinMsg(): boolean {
-    return this.phrase === 'END' && this.result.winner === 'PLAYER_1';
-  }
-
   get playerOneName(): string {
     return `${this.player.PLAYER_1.name}(${this.player.PLAYER_1.symbol})`;
-  }
-
-  get playerOneTurnMsg(): string {
-    if (this.secondPlayer) {
-      return 'Go Player 1!';
-    }
-
-    return 'Your turn!';
-  }
-
-  get shouldShowPlayerOneTurn(): boolean {
-    return this.phrase === 'PLAYING' && this.turn === 'PLAYER_1';
   }
 
   get playerTwoName(): string {
@@ -252,6 +276,18 @@ export default class GomokuGame extends Vue {
     return `${this.computerAI.toLowerCase()}(${this.player.PLAYER_2.symbol})`;
   }
 
+  get turnStatus(): string {
+    if (this.phrase !== 'PLAYING') {
+      return '';
+    }
+
+    if (this.turn === 'PLAYER_1') {
+      return this.playerOneTurnMsg;
+    }
+
+    return this.playerTwoTurnMsg;
+  }
+
   get playerTwoTurnMsg(): string {
     if (this.secondPlayer) {
       return 'Go Player 2!';
@@ -260,18 +296,38 @@ export default class GomokuGame extends Vue {
     return "Computer's turn";
   }
 
-  get shouldShowPlayerTwoTurn(): boolean {
-    return this.phrase === 'PLAYING' && this.turn === 'PLAYER_2';
+  get playerOneTurnMsg(): string {
+    if (this.secondPlayer) {
+      return 'Go Player 1!';
+    }
+
+    return 'Your turn!';
   }
 
-  choseOnePlayer() {
-    this.secondPlayer = false;
+  // eslint-disable-next-line class-methods-use-this
+  get modeOptions(): ViewOption[] {
+    return ModeOptions;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  get symbolOptions(): ViewOption[] {
+    return SymbolOptions;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  get computerAgentOptions(): ViewOption[] {
+    return ComputerAgentOptions;
+  }
+
+  chooseMode(mode: GameMode) {
+    this.secondPlayer = mode === 'TWO_PLAYER';
+
+    if (this.secondPlayer) {
+      this.toGameStarter();
+      return;
+    }
+
     this.toSelectComputer();
-  }
-
-  choseSecondPlayer() {
-    this.secondPlayer = true;
-    this.toGameStarter();
   }
 
   toGameStarter() {
@@ -297,9 +353,9 @@ export default class GomokuGame extends Vue {
   firstGame(playerOneSymbol: PlayerSymbols): void {
     this.player.PLAYER_1.symbol = playerOneSymbol;
     this.player.PLAYER_2.symbol =
-      PLAYER_SYMBOLS.find((x) => x !== playerOneSymbol) || '';
+      PLAYER_SYMBOLS.find((x) => x !== playerOneSymbol) || EMPTY_STRING;
     if (this.secondPlayer) {
-      this.player.PLAYER_2.name = 'player 2';
+      this.player.PLAYER_2.name = 'Player2';
     }
     this.turn = this.whoStarts();
     this.play();
@@ -315,9 +371,10 @@ export default class GomokuGame extends Vue {
     this.toGameStarter();
   }
 
-  playerTurn(x: number, y: number): void {
+  playerTurn(position: { x: number; y: number }): void {
+    const { x, y } = position;
     if (
-      this.board.currentBoards[x][y] === '' &&
+      this.board.currentBoards[x][y] === EMPTY_CELL &&
       this.phrase === 'PLAYING' &&
       (this.turn === 'PLAYER_1' ||
         (this.turn === 'PLAYER_2' && this.secondPlayer))
@@ -393,7 +450,7 @@ export default class GomokuGame extends Vue {
   }
 
   checkWin(board: string[][]): Player | null {
-    let winnerSymbol = '';
+    let winnerSymbol = EMPTY_STRING;
     // eslint-disable-next-line max-len
     const isWin = board.some((row, indexRow) =>
       // eslint-disable-next-line implicit-arrow-linebreak
@@ -402,7 +459,7 @@ export default class GomokuGame extends Vue {
         winPattern.some((pattern) => {
           const symbol = board[indexRow][indexCell];
 
-          if (symbol === '') return false;
+          if (symbol === EMPTY_CELL) return false;
 
           const isWinLocal2 = pattern.reduce((result, item) => {
             const x = indexRow + item[0];
@@ -463,7 +520,7 @@ export default class GomokuGame extends Vue {
 
     board.forEach((row, indexRow) => {
       row.forEach((_, indexCell) => {
-        if (board[indexRow][indexCell] === '') {
+        if (board[indexRow][indexCell] === EMPTY_CELL) {
           const newBoard = board.map((row2, x) => {
             if (indexRow === x) {
               return row2.map((cell, y) => {
@@ -516,7 +573,7 @@ export default class GomokuGame extends Vue {
 
       for (let r = 0; r < BOARD_LENGTH; r += 1) {
         for (let c = 0; c < BOARD_LENGTH; c += 1) {
-          if (board[r][c] === '') {
+          if (board[r][c] === EMPTY_CELL) {
             const newBoard = board.map((row, x) => {
               if (r === x) {
                 return row.map((cell, y) => {
@@ -555,7 +612,7 @@ export default class GomokuGame extends Vue {
 
     for (let r = 0; r < BOARD_LENGTH; r += 1) {
       for (let c = 0; c < BOARD_LENGTH; c += 1) {
-        if (board[r][c] === '') {
+        if (board[r][c] === EMPTY_CELL) {
           const newBoard = board.map((row, x) => {
             if (r === x) {
               return row.map((cell, y) => {
@@ -591,7 +648,7 @@ export default class GomokuGame extends Vue {
 
   // eslint-disable-next-line class-methods-use-this
   isMovesLeft(board: string[][]): boolean {
-    return board.some((row) => row.some((cell) => cell === ''));
+    return board.some((row) => row.some((cell) => cell === EMPTY_CELL));
   }
 
   resetGame(): void {
@@ -615,27 +672,20 @@ export default class GomokuGame extends Vue {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 .outer-container {
-  background: rgba(255, 255, 255, 1);
-  box-shadow: inset -1px 1px 7px rgba(0, 0, 0, 0.2),
-    inset 1px -1px 7px rgba(0, 0, 0, 0.2), 1px 12px 5px rgba(0, 0, 0, 0.4),
-    4px 3px 8px rgba(0, 0, 0, 0.4), 5px 10px 10px rgba(0, 0, 0, 0.2),
-    -5px 10px 10px rgba(0, 0, 0, 0.4);
   position: relative;
+  background: rgba(255, 255, 255, 1);
   border-radius: 10px;
-  width: 600px;
-  height: 600px;
   margin: 0 auto;
-  padding: 40px 0 0;
+  text-align: center;
 }
 
 .board-container {
-  width: 589px;
-  height: 550px;
-  background: rgba(40, 40, 40, 1);
-  background-size: cover;
-  position: relative;
+  width: 100%;
+  height: 100%;
+  /* background: rgba(40, 40, 40, 1); */
+  background: rgba(255, 255, 255, 1);
   margin: 0 auto;
-  overflow: hidden;
+  margin-top: 10px;
 }
 
 .game-board {
@@ -643,238 +693,5 @@ export default class GomokuGame extends Vue {
   height: 100%;
   margin: 0 auto;
   position: relative;
-}
-
-.boxes {
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  position: relative;
-  left: 0px;
-  top: 0px;
-}
-
-.boxes tr {
-  display: inline-block;
-  position: relative;
-  z-index: 1000;
-  overflow: hidden;
-}
-
-.boxes tr td {
-  font-size: 1rem;
-  text-align: center;
-  display: block;
-  width: 25px;
-  height: 25px;
-  font-style: normal;
-  font-family: 'Architects Daughter', 'Helvetica', 'sans-serif';
-  color: rgba(220, 220, 220, 0.7);
-  z-index: 500;
-}
-
-tr,
-td {
-  border: 0.1px solid darkslategrey;
-}
-
-table {
-  border-collapse: collapse;
-  border-spacing: 0;
-}
-
-/* li span {
-  position: relative;
-  bottom: 15px;
-}
- */
-.draw-message,
-.lose-message,
-.win-message {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.8);
-  width: 100%;
-  height: 100%;
-  z-index: 2000;
-  position: absolute;
-  top: 0;
-  left: 0;
-  box-sizing: border-box;
-}
-
-.draw-message p,
-.lose-message p,
-.win-message p {
-  color: white;
-  text-align: center;
-  position: absolute;
-  font-size: 2.3rem;
-  margin: 0;
-  font-family: 'Architects Daughter', sans-serif;
-}
-
-/*============================================
-          Game Starter
-============================================*/
-.game-choice,
-.game-starter {
-  background: rgba(40, 40, 40, 1);
-  display: block;
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0px;
-  text-align: center;
-  font-family: 'Futura', Helvetica, sans-serif;
-  z-index: 1500;
-}
-
-.game-choice p,
-.game-starter p,
-.game-starter button {
-  font-size: 2.2rem;
-}
-
-.game-choice button,
-.game-choice p,
-.game-starter button,
-.game-starter p {
-  color: rgba(220, 220, 220, 1);
-  position: relative;
-  top: 50px;
-  margin: 10px auto;
-}
-
-.game-choice button,
-.game-starter button {
-  background: none;
-  border: none;
-  opacity: 0.6;
-  border-radius: 20px;
-  border: 2px solid transparent;
-  font-size: 2.2rem;
-}
-
-.game-choice button:focus,
-.game-starter button:focus {
-  outline: none;
-}
-.game-choice button:hover,
-.game-starter button:hover {
-  opacity: 1;
-  border: 2px dashed rgba(230, 230, 230, 0.5);
-}
-
-.game-starter button.back-button {
-  position: absolute;
-  top: 270px;
-  right: 130px;
-  font-size: 1.5rem;
-  border: none;
-}
-
-.game-starter .back-button:hover {
-  border: none;
-}
-
-button {
-  cursor: pointer;
-}
-
-/* Playing */
-
-/* Player/Computer prompt */
-.player-one-turn {
-  background: rgba(0, 200, 200, 1);
-  left: 15px;
-}
-
-.player-two-turn {
-  background: rgba(200, 100, 100, 1);
-  right: 15px;
-}
-
-.player-one-turn,
-.player-two-turn {
-  position: absolute;
-  top: -45px;
-  width: 170px;
-  height: 50px;
-  z-index: -10;
-  color: white;
-  text-align: center;
-}
-
-.player-one-turn p,
-.player-two-turn p {
-  font-size: 1.3rem;
-  margin-top: 10px;
-}
-
-/* Score keeping */
-.points-divider,
-.score-1,
-.score-2 {
-  position: absolute;
-  font-size: 0.9rem;
-  margin: 0;
-}
-
-.score-1,
-.score-2 {
-  font-family: 'Futura', sans-serif;
-  top: 17px;
-  color: rgba(100, 60, 50, 0.8);
-}
-
-.score-1 .points,
-.score-2 .points {
-  position: absolute;
-  text-align: center;
-  bottom: 14px;
-  color: rgba(100, 60, 50, 0.9);
-  font-family: 'Futura', sans-serif;
-}
-
-.points-divider {
-  top: 5px;
-  left: 141px;
-  font-size: 2rem;
-  font-family: helvetica, sans-serif;
-  font-style: normal;
-  opacity: 0.2;
-}
-
-.score-1 {
-  left: 50px;
-}
-
-.score-2 {
-  left: 161px;
-}
-
-/* reset button */
-.hard-reset {
-  position: absolute;
-  top: 5px;
-  right: 20px;
-  background: none;
-  border: none;
-  font-family: 'Architects Daughter', sans-serif;
-  color: rgba(100, 60, 50, 0.8);
-  font-size: 1.1rem;
-  border-radius: 20px;
-  border: 2px dashed transparent;
-}
-
-.hard-reset:hover {
-  border: 2px dashed rgba(100, 60, 50, 1);
-  color: rgba(100, 60, 50, 1);
-}
-
-.hard-reset:focus {
-  outline: none;
 }
 </style>

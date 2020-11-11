@@ -1,5 +1,5 @@
 
-import { GAME_PHRASES, PLAYER_SYMBOLS, PLAYERS, COMPUTER_AGENTS } from '@/lib/constants'
+import { GAME_PHRASES, PLAYER_SYMBOLS, PLAYERS, COMPUTER_AGENTS, GAME_MODE } from '@/lib/constants'
 
 export type GamePhrases = typeof GAME_PHRASES[number];
 
@@ -15,4 +15,4 @@ export type Player = typeof PLAYERS[number];
 
 export type ComputerAgent = typeof COMPUTER_AGENTS[number];
 
-
+export type GameMode = typeof GAME_MODE[number];

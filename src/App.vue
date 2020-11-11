@@ -30,10 +30,17 @@
   border: solid 2px gray;
   border-left-width: 0;
   border-right-width: 0;
+  font-family: monospace;
+  font-size: 1.5rem;
+
+  box-shadow: inset -1px 1px 7px rgba(0, 0, 0, 0.2),
+    inset 1px -1px 1px rgba(0, 0, 0, 0.2), 1px 1px 1px rgba(0, 0, 0, 0.4),
+    1px 1px 1px rgba(0, 0, 0, 0.4), 1px 1px 1px rgba(0, 0, 0, 0.2),
+    -1px 1px 1px rgba(0, 0, 0, 0.1);
 
   div {
     &:nth-child(n + 2) {
-      padding-left: 2px;
+      padding-left: 5px;
     }
     color: black;
   }
@@ -42,7 +49,7 @@
     width: 100%;
     font-weight: bold;
     border: solid 1px gray;
-    border-radius: 5px;
+    border-radius: 10px;
     text-decoration: none;
     padding: 0 10px;
     color: black;
@@ -52,6 +59,7 @@
       background-color: gray;
     }
     cursor: pointer;
+    line-height: 1.5;
   }
 }
 </style>

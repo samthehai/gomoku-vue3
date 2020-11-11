@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <h1>Welcome to LenGames!!! Let's choose your game and start to play!</h1>
+    <h1>Welcome to LenGames</h1>
   </div>
 </template>
 
@@ -10,5 +10,11 @@ export default {
 };
 </script>
 
-<style>
+<style lang="scss" scoped>
+.home {
+  font-family: monospace;
+  color: gray;
+  text-align: center;
+  margin: 0 auto;
+}
 </style>
