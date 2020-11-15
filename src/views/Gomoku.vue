@@ -183,8 +183,6 @@ export default class Gomoku extends Vue {
     this.initializeGame();
   }
 
-  timeOuts = [];
-
   phrase = 'GAME_CHOICE' as GamePhrases;
 
   secondPlayer = false;
@@ -652,7 +650,6 @@ export default class Gomoku extends Vue {
   }
 
   resetGame(): void {
-    this.timeOuts.forEach((timer: number | undefined) => clearTimeout(timer));
     this.player.PLAYER_1.score = 0;
     this.player.PLAYER_2.score = 0;
     this.board = { ...this.board, ...initializeBoardValue() };
@@ -661,7 +658,6 @@ export default class Gomoku extends Vue {
   }
 
   reset(): void {
-    this.timeOuts.forEach((timer: number | undefined) => clearTimeout(timer));
     this.initializeGame();
     this.turn = this.whoStarts();
     this.play();
