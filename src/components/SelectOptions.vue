@@ -67,8 +67,18 @@ export default {
   }
 
   &__item {
-    &:hover, &:active {
-      background-color: gray;
+    outline: none;
+    cursor: pointer;
+
+    &:hover,
+    &:active {
+      background: rgb(208, 207, 226);
+      background: linear-gradient(
+        90deg,
+        rgb(208, 207, 226) 0%,
+        rgba(171, 198, 193, 1) 35%,
+        rgba(0, 212, 255, 1) 100%
+      );
     }
   }
 
@@ -81,9 +91,16 @@ export default {
     outline: none;
     cursor: pointer;
 
-    &:hover, &:active {
+    &:hover,
+    &:active {
       outline: none;
-      background-color: gray;
+      background: rgb(208, 207, 226);
+      background: linear-gradient(
+        90deg,
+        rgb(208, 207, 226) 0%,
+        rgba(171, 198, 193, 1) 35%,
+        rgba(0, 212, 255, 1) 100%
+      );
     }
 
     &::before {

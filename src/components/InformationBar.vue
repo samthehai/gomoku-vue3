@@ -6,15 +6,15 @@
         v-bind:key="index"
         class="infos__item"
       >
-        <div class="infos__item-header">{{ item.text }}</div>
-        <div class="infos__child">
+        <div v-if="item.text" class="infos__item-text">{{ item.text }}</div>
+        <div v-if="item.lists" class="infos__child">
           <div
             v-for="(childItem, childIndex) in item.lists"
             v-bind:key="childIndex"
             class="infos__child-item"
           >
-            <span class="infos__child-label">{{ childItem.text }}</span
-            > <span>{{ childItem.value }}</span>
+            <span class="infos__child-label">{{ childItem.text }}</span>
+            <span class="infos__child-value">{{ childItem.value }}</span>
           </div>
         </div>
       </div>
@@ -52,18 +52,29 @@ export default {
 <style lang="scss" scoped>
 .information-bar {
   display: flex;
-  margin: 0 10vw;
   font-family: monospace;
-  font-size: calc(3vw);
-
-  &__infos {
-  }
+  font-size: calc(min(3vw, 20px));
 
   &__control-section {
     display: flex;
     align-items: flex-end;
     margin-left: auto;
     font-weight: bold;
+
+    .button {
+      padding: 5px;
+      background: rgb(208, 207, 226);
+      background: linear-gradient(
+        90deg,
+        rgb(208, 207, 226) 0%,
+        rgba(171, 198, 193, 1) 35%,
+        rgba(0, 212, 255, 1) 100%
+      );
+      border-radius: 10px;
+
+      outline: none;
+      cursor: pointer;
+    }
 
     .button:hover,
     :active {
@@ -73,8 +84,15 @@ export default {
 }
 
 .infos {
-  &__item-header {
-    font-weight: bold;
+  &__item-text {
+    border-radius: 10px;
+    background: rgb(208, 207, 226);
+    background: linear-gradient(
+      90deg,
+      rgb(208, 207, 226) 0%,
+      rgba(171, 198, 193, 1) 35%,
+      rgba(0, 212, 255, 1) 100%
+    );
   }
 
   &__child {
@@ -82,7 +100,9 @@ export default {
   }
 
   &__child-label {
-    font-weight: bold;
+    &::after {
+      content: ':';
+    }
   }
 
   &__child-item {
@@ -94,6 +114,10 @@ export default {
     &:not(:last-child) {
       padding-right: 5px;
     }
+  }
+
+  &__child-value {
+    margin-left: 5px;
   }
 }
 </style>

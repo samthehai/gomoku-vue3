@@ -63,10 +63,10 @@ import {
   ComputerAgent,
   // eslint-disable-next-line no-unused-vars
   GameMode,
-} from '@/@types/globals.d';
+} from '@/lib/types.d';
 import { PLAYER_SYMBOLS } from '@/lib/constants';
 
-const BOARD_LENGTH = 19;
+const BOARD_LENGTH = 14;
 const EMPTY_CELL = ' ';
 const EMPTY_STRING = '';
 
@@ -216,7 +216,11 @@ export default class Gomoku extends Vue {
   get playerScores(): InformationBarData[] {
     return [
       {
-        text: 'Score',
+        text: this.turnStatus,
+        lists: [],
+      },
+      {
+        text: '',
         lists: [
           {
             text: this.playerOneName,
@@ -227,10 +231,6 @@ export default class Gomoku extends Vue {
             value: this.player.PLAYER_2.score,
           },
         ],
-      },
-      {
-        text: this.turnStatus,
-        lists: [],
       },
     ];
   }

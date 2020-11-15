@@ -59,8 +59,9 @@ export default {
 
 <style lang="scss" scoped>
 .board {
+  --board-width: min(80vw, 600px);
   --cell-number: 8; /* default value will be replace in JS */
-  --cell-width: calc(80vw / var(--cell-number));
+  --cell-width: calc(var(--board-width) / var(--cell-number));
 
   display: grid;
   grid-gap: 0;
@@ -79,8 +80,8 @@ export default {
     color: rgba(0, 0, 0, 0.5);
     border: 0.1px solid rgb(207, 218, 218);
     z-index: 500;
-    line-height: 1;
-    font-size: calc(4vw);
+    line-height: 1.2;
+    font-size: calc(min(4vw, 35px));
   }
 
   &__game-end-message {

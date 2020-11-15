@@ -17,8 +17,13 @@
 <style lang="scss">
 .view {
   &__content {
-    margin-top: 20px;
-    width: 100%;
+    max-width: 600px;
+    margin: 20px auto 0;
+
+    @media screen and (max-width: 600px) {
+      margin-left: 10vw;
+      margin-right: 10vw;
+    }
   }
 }
 .nav {
@@ -56,7 +61,13 @@
     background-color: white;
     &.router-link-exact-active {
       color: white;
-      background-color: gray;
+      background: rgb(208, 207, 226);
+      background: linear-gradient(
+        90deg,
+        rgb(208, 207, 226) 0%,
+        rgba(171, 198, 193, 1) 35%,
+        rgba(0, 212, 255, 1) 100%
+      );
     }
     cursor: pointer;
     line-height: 1.5;
