@@ -14,7 +14,7 @@
         class="board__cell"
         @click="$emit('click-cell', { x: rowIndex, y: cellIndex })"
       >
-        {{ cell }}
+        {{ cell.value }}
       </div>
     </template>
   </div>

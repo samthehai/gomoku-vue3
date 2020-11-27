@@ -31,7 +31,7 @@
 
       <div v-if="shouldShowGameBoard" class="game-board">
         <BoardView
-          :board="board.currentBoards"
+          :board="board.cells"
           :game-end-message="gameEndMessage"
           @click-reset="reset"
           @click-cell="playerTurn"
@@ -52,88 +52,23 @@ import InformationBar, {
 } from '@/components/InformationBar.vue';
 import {
   // eslint-disable-next-line no-unused-vars
-  GamePhrases,
+  GamePhrase,
   // eslint-disable-next-line no-unused-vars
-  PlayerSymbols,
-  // eslint-disable-next-line no-unused-vars
-  PlayerInfo,
-  // eslint-disable-next-line no-unused-vars
-  Player,
+  PlayerSymbol,
   // eslint-disable-next-line no-unused-vars
   ComputerAgent,
   // eslint-disable-next-line no-unused-vars
   GameMode,
-} from '@/lib/types.d';
-import { PLAYER_SYMBOLS } from '@/lib/constants';
+} from '@/models/gomoku/types.d';
+import { PLAYER_SYMBOLS, EMPTY_CELL } from '@/models/gomoku/constants';
+import Board from '@/models/gomoku/Board';
+// eslint-disable-next-line no-unused-vars
+import Player, { ComputerPlayer } from '@/models/gomoku/Player';
+// eslint-disable-next-line no-unused-vars
+import Cell from '@/models/gomoku/Cell';
 
 const BOARD_LENGTH = 14;
-const EMPTY_CELL = ' ';
 const EMPTY_STRING = '';
-
-const inintializeBoardCells = (): string[][] => {
-  const board: string[][] = [];
-  for (let i = 0; i < BOARD_LENGTH; i += 1) {
-    board[i] = [];
-    for (let j = 0; j < BOARD_LENGTH; j += 1) {
-      board[i][j] = EMPTY_CELL;
-    }
-  }
-  return board;
-};
-
-const initializeBoardValue = (): Object => ({
-  numFilledIn: 0,
-  currentBoards: inintializeBoardCells(),
-});
-
-const initializeResult = (): Object => ({
-  winner: null as Player | null,
-});
-
-const winPattern = [
-  [
-    [0, 0],
-    [1, 0],
-    [2, 0],
-    [3, 0],
-    [4, 0],
-  ],
-  [
-    [0, 0],
-    [0, 1],
-    [0, 2],
-    [0, 3],
-    [0, 4],
-  ],
-  [
-    [0, 0],
-    [1, 1],
-    [2, 2],
-    [3, 3],
-    [4, 4],
-  ],
-  [
-    [0, 0],
-    [-1, -1],
-    [-2, -2],
-    [-3, -3],
-    [-4, -4],
-  ],
-  [
-    [0, 0],
-    [-1, 1],
-    [-2, 2],
-    [-3, 3],
-    [-4, 4],
-  ],
-  [
-    [0, 0],
-    [1, -1],
-    [2, -2],
-    [3, -3],
-    [4, -4],
-  ],
-];
 
 const ModeOptions: ViewOption[] = [
   {
@@ -149,11 +84,11 @@ const ModeOptions: ViewOption[] = [
 const SymbolOptions: ViewOption[] = [
   {
     text: 'X',
-    value: 'X' as PlayerSymbols,
+    value: 'X' as PlayerSymbol,
   },
   {
     text: 'O',
-    value: 'O' as PlayerSymbols,
+    value: 'O' as PlayerSymbol,
   },
 ];
 
@@ -169,9 +104,6 @@ const ComputerAgentOptions: ViewOption[] = [
 ];
 
 @Options({
-  // Specify `components` option.
-  // See Vue.js docs for all available options:
-  // https://vuejs.org/v2/api/#Options-Data
   components: {
     BoardView,
     SelectOptions,
@@ -183,33 +115,24 @@ export default class Gomoku extends Vue {
     this.initializeGame();
   }
 
-  phrase = 'GAME_CHOICE' as GamePhrases;
+  phrase: GamePhrase = 'GAME_CHOICE';
 
-  secondPlayer = false;
+  mode: GameMode = 'ONE_PLAYER';
 
-  turn = 'PLAYER_1' as Player;
+  turn: PlayerSymbol = 'X';
 
-  computerAI = 'PO' as ComputerAgent;
+  player1: Player = new Player('Player 1');
 
-  player = {
-    PLAYER_1: {
-      name: 'Player1',
-      symbol: 'O', // default is O
-      score: 0,
-    },
-    PLAYER_2: {
-      name: 'Computer',
-      symbol: 'X', // default is X
-      score: 0,
-    },
-  } as { [key: string]: PlayerInfo };
+  player2: ComputerPlayer = new ComputerPlayer('Player 2');
 
-  board = initializeBoardValue() as {
-    numFilledIn: number;
-    currentBoards: string[][];
-  };
+  board: Board = new Board(BOARD_LENGTH);
 
-  result = initializeResult() as { winner: Player | null };
+  winner: Player | null = null;
+
+  initializeGame(): void {
+    this.board.initialize();
+    this.winner = null;
+  }
 
   get playerScores(): InformationBarData[] {
     return [
@@ -221,12 +144,12 @@ export default class Gomoku extends Vue {
         text: '',
         lists: [
           {
-            text: this.playerOneName,
-            value: this.player.PLAYER_1.score,
+            text: this.player1?.name || '',
+            value: this.player1?.score || 0,
           },
           {
-            text: this.playerTwoName,
-            value: this.player.PLAYER_2.score,
+            text: this.player2?.name || '',
+            value: this.player2?.score || 0,
           },
         ],
       },
@@ -246,60 +169,33 @@ export default class Gomoku extends Vue {
       return EMPTY_STRING;
     }
 
-    if (!this.result.winner) {
+    if (!this.winner) {
       return 'It was a draw..';
     }
 
-    const winnerNumber = this.result.winner === 'PLAYER_1' ? 1 : 2;
-    if (this.secondPlayer) {
-      return `Player ${winnerNumber} wins!! :D `;
+    if (this.mode === 'TWO_PLAYER') {
+      return `${this.winner.name} wins!! :D `;
     }
 
-    if (this.result.winner === 'PLAYER_2') {
+    if (this.winner === this.player2) {
       return 'Uh oh, you lost..';
     }
 
     return 'You Won!!!';
   }
 
-  get playerOneName(): string {
-    return `${this.player.PLAYER_1.name}(${this.player.PLAYER_1.symbol})`;
-  }
-
-  get playerTwoName(): string {
-    if (this.secondPlayer) {
-      return `${this.player.PLAYER_2.name}(${this.player.PLAYER_2.symbol})`;
-    }
-
-    return `${this.computerAI.toLowerCase()}(${this.player.PLAYER_2.symbol})`;
-  }
-
   get turnStatus(): string {
     if (this.phrase !== 'PLAYING') {
-      return '';
+      return this.gameEndMessage;
     }
 
-    if (this.turn === 'PLAYER_1') {
-      return this.playerOneTurnMsg;
-    }
+    const player = this.getPlayerBySymbol(this.turn);
 
-    return this.playerTwoTurnMsg;
+    return `${player?.name}'s turn`;
   }
 
-  get playerTwoTurnMsg(): string {
-    if (this.secondPlayer) {
-      return 'Go Player 2!';
-    }
-
-    return "Computer's turn";
-  }
-
-  get playerOneTurnMsg(): string {
-    if (this.secondPlayer) {
-      return 'Go Player 1!';
-    }
-
-    return 'Your turn!';
+  get isComputerTurn(): boolean {
+    return this.mode === 'ONE_PLAYER' && this.turn === this.player2.symbol;
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -318,9 +214,9 @@ export default class Gomoku extends Vue {
   }
 
   chooseMode(mode: GameMode) {
-    this.secondPlayer = mode === 'TWO_PLAYER';
+    this.mode = mode;
 
-    if (this.secondPlayer) {
+    if (this.mode === 'TWO_PLAYER') {
       this.toGameStarter();
       return;
     }
@@ -340,72 +236,58 @@ export default class Gomoku extends Vue {
     this.phrase = 'GAME_CHOICE';
   }
 
-  initializeGame(): void {
-    this.board = initializeBoardValue() as {
-      numFilledIn: number;
-      currentBoards: string[][];
-    };
-    this.result = initializeResult() as { winner: Player | null };
-  }
-
-  firstGame(playerOneSymbol: PlayerSymbols): void {
-    this.player.PLAYER_1.symbol = playerOneSymbol;
-    this.player.PLAYER_2.symbol =
-      PLAYER_SYMBOLS.find((x) => x !== playerOneSymbol) || EMPTY_STRING;
-    if (this.secondPlayer) {
-      this.player.PLAYER_2.name = 'Player2';
+  firstGame(playerOneSymbol: PlayerSymbol): void {
+    if (!this.player1 || !this.player2) {
+      return;
     }
+
+    this.player1.symbol = playerOneSymbol;
+    this.player2.symbol =
+      PLAYER_SYMBOLS.find((x) => x !== playerOneSymbol) || EMPTY_STRING;
+
     this.turn = this.whoStarts();
     this.play();
   }
 
   // eslint-disable-next-line class-methods-use-this
-  whoStarts(): string {
-    return `PLAYER_${Math.floor(Math.random() * 2 + 1)}`;
+  whoStarts(): PlayerSymbol {
+    const rand = Math.floor(Math.random() * 2 + 1);
+    return rand === 1 ? 'X' : 'O';
   }
 
   selectComputerAI(name: ComputerAgent): void {
-    this.computerAI = name;
+    this.player2.name = name;
     this.toGameStarter();
   }
 
   playerTurn(position: { x: number; y: number }): void {
     const { x, y } = position;
     if (
-      this.board.currentBoards[x][y] === EMPTY_CELL &&
+      this.board.cells[x][y].value === EMPTY_CELL &&
       this.phrase === 'PLAYING' &&
-      (this.turn === 'PLAYER_1' ||
-        (this.turn === 'PLAYER_2' && this.secondPlayer))
+      !this.isComputerTurn
     ) {
-      const { symbol } = this.player[this.turn];
-      const newBoards = this.board.currentBoards.map(
-        (row: string[], rowIndex: number) => {
-          if (x === rowIndex) {
-            return row.map((cell, cellIndex) => {
-              if (y === cellIndex) return symbol;
-              return cell;
-            });
-          }
-          return row;
-        },
-      );
+      const symbol = this.turn;
 
-      this.updateCurrentBoards(newBoards);
+      this.board.cells[x][y].setValue(symbol);
       this.endTurn();
     }
   }
 
-  updateCurrentBoards(newBoards: string[][]): void {
-    this.board.numFilledIn += 1;
-    this.board.currentBoards = newBoards;
+  getPlayerBySymbol(symbol: PlayerSymbol): Player | null {
+    if (this.player1?.symbol === symbol) {
+      return this.player1;
+    }
+
+    return this.player2;
   }
 
   play(): void {
     this.phrase = 'PLAYING';
     setTimeout(() => {
-      if (!this.secondPlayer && this.turn === 'PLAYER_2') {
+      if (this.isComputerTurn) {
         this.computerTurn();
-        this.turn = 'PLAYER_1';
+        this.endTurn();
       }
     }, 0);
   }
@@ -415,244 +297,53 @@ export default class Gomoku extends Vue {
       return;
     }
 
-    const winner = this.checkWin(this.board.currentBoards);
+    const winnerSymbol = this.board.checkWin();
+    const winner = winnerSymbol ? this.getPlayerBySymbol(winnerSymbol) : null;
     if (winner) {
       this.phrase = 'END';
-      this.result = { ...this.result, winner };
-      this.updateScore(winner);
+      this.winner = winner;
+      this.winner.score += 1;
       return;
     }
 
-    if (this.board.numFilledIn >= BOARD_LENGTH * BOARD_LENGTH) {
+    if (!this.board.isMovesLeft()) {
       this.phrase = 'END';
       return;
     }
 
-    if (this.turn === 'PLAYER_1') {
-      this.turn = 'PLAYER_2';
-      setTimeout(() => {
-        if (!this.secondPlayer) {
-          this.computerTurn();
-          this.endTurn();
-        }
-      }, 0);
-    } else if (this.turn === 'PLAYER_2') {
-      this.turn = 'PLAYER_1';
-    }
+    this.turn = this.nextTurn();
+    setTimeout(() => {
+      if (this.isComputerTurn) {
+        this.computerTurn();
+        this.endTurn();
+      }
+    }, 0);
   }
 
-  updateScore(winner: Player): void {
-    if (winner) {
-      this.player[winner].score += 1;
-    }
-  }
-
-  checkWin(board: string[][]): Player | null {
-    let winnerSymbol = EMPTY_STRING;
-    // eslint-disable-next-line max-len
-    const isWin = board.some((row, indexRow) =>
-      // eslint-disable-next-line implicit-arrow-linebreak
-      row.some((cell, indexCell) =>
-        // eslint-disable-next-line implicit-arrow-linebreak
-        winPattern.some((pattern) => {
-          const symbol = board[indexRow][indexCell];
-
-          if (symbol === EMPTY_CELL) return false;
-
-          const isWinLocal2 = pattern.reduce((result, item) => {
-            const x = indexRow + item[0];
-            const y = indexCell + item[1];
-            if (x >= BOARD_LENGTH || x < 0 || y >= BOARD_LENGTH || y < 0) {
-              return false;
-            }
-            return result && board[x][y] === symbol;
-          }, true);
-
-          if (isWinLocal2) {
-            winnerSymbol = symbol;
-          }
-
-          return isWinLocal2;
-        }),
-      ),
-    );
-
-    if (!isWin) {
-      return null;
+  nextTurn(): PlayerSymbol {
+    if (this.turn === 'X') {
+      return 'O';
     }
 
-    return winnerSymbol === this.player.PLAYER_1.symbol
-      ? 'PLAYER_1'
-      : 'PLAYER_2';
+    return 'X';
   }
 
   computerTurn(): void {
-    let nextMove: { x: number; y: number } | null = null;
-    nextMove = this.findBestMove(this.board.currentBoards);
-
+    let nextMove: Cell | null = null;
+    nextMove = this.player2.findBestMove(this.board);
     if (!nextMove) {
       return;
     }
-
-    const newBoard = this.board.currentBoards.map(
-      (row: string[], rowIndex: number) => {
-        if (nextMove?.x === rowIndex) {
-          return row.map((cell, cellIndex) => {
-            if (nextMove?.y === cellIndex) {
-              return this.player.PLAYER_2.symbol;
-            }
-
-            return cell;
-          });
-        }
-        return row;
-        // eslint-disable-next-line comma-dangle
-      },
+    this.board.cells[nextMove.x][nextMove.y].setValue(
+      this.player2?.symbol || '',
     );
-    this.updateCurrentBoards(newBoard);
-  }
-
-  findBestMove(board: string[][]): { x: number; y: number } | null {
-    let bestMove = null;
-    let bestScore = -1000000;
-
-    board.forEach((row, indexRow) => {
-      row.forEach((_, indexCell) => {
-        if (board[indexRow][indexCell] === EMPTY_CELL) {
-          const newBoard = board.map((row2, x) => {
-            if (indexRow === x) {
-              return row2.map((cell, y) => {
-                if (indexCell === y) {
-                  return this.player.PLAYER_2.symbol;
-                }
-
-                return cell;
-              });
-            }
-
-            return row2;
-          });
-
-          const newScore = this.minimaxLEN(
-            newBoard,
-            0,
-            false,
-            -1000000,
-            1000000,
-          );
-
-          if (newScore > bestScore) {
-            bestScore = newScore;
-            bestMove = { x: indexRow, y: indexCell };
-          }
-        }
-      });
-    });
-
-    return bestMove;
-  }
-
-  minimaxLEN(
-    board: string[][],
-    depth: number,
-    isMax: boolean,
-    alpha: number,
-    beta: number,
-  ): number {
-    const winner = this.checkWin(board);
-    if (winner === 'PLAYER_2') return 10 - depth;
-    if (winner === 'PLAYER_1') return -10 + depth;
-
-    if (!this.isMovesLeft(board)) return 4;
-    if (depth >= 2) return 2;
-
-    if (isMax) {
-      let bestScore = -1000000;
-
-      for (let r = 0; r < BOARD_LENGTH; r += 1) {
-        for (let c = 0; c < BOARD_LENGTH; c += 1) {
-          if (board[r][c] === EMPTY_CELL) {
-            const newBoard = board.map((row, x) => {
-              if (r === x) {
-                return row.map((cell, y) => {
-                  if (c === y) {
-                    return this.player.PLAYER_2.symbol;
-                  }
-
-                  return cell;
-                });
-              }
-
-              return row;
-            });
-
-            const newScore = this.minimaxLEN(
-              newBoard,
-              depth + 1,
-              !isMax,
-              alpha,
-              beta,
-            );
-
-            if (newScore > bestScore) bestScore = newScore;
-            // eslint-disable-next-line no-param-reassign
-            if (bestScore > alpha) alpha = bestScore;
-            if (alpha >= beta) {
-              return bestScore;
-            }
-          }
-        }
-      }
-
-      return bestScore;
-    }
-    let bestScore = 1000000;
-
-    for (let r = 0; r < BOARD_LENGTH; r += 1) {
-      for (let c = 0; c < BOARD_LENGTH; c += 1) {
-        if (board[r][c] === EMPTY_CELL) {
-          const newBoard = board.map((row, x) => {
-            if (r === x) {
-              return row.map((cell, y) => {
-                if (c === y) {
-                  return this.player.PLAYER_1.symbol;
-                }
-
-                return cell;
-              });
-            }
-
-            return row;
-          });
-
-          const newScore = this.minimaxLEN(
-            newBoard,
-            depth + 1,
-            !isMax,
-            alpha,
-            beta,
-          );
-
-          if (newScore < bestScore) bestScore = newScore;
-          // eslint-disable-next-line no-param-reassign
-          if (bestScore < beta) beta = bestScore;
-          if (alpha >= beta) return bestScore;
-        }
-      }
-    }
-
-    return bestScore;
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  isMovesLeft(board: string[][]): boolean {
-    return board.some((row) => row.some((cell) => cell === EMPTY_CELL));
   }
 
   resetGame(): void {
-    this.player.PLAYER_1.score = 0;
-    this.player.PLAYER_2.score = 0;
-    this.board = { ...this.board, ...initializeBoardValue() };
+    if (!this.player1 || !this.player2) return;
+    this.player1.score = 0;
+    this.player2.score = 0;
+    this.board.initialize();
     this.phrase = 'GAME_CHOICE';
     this.turn = this.whoStarts();
   }
