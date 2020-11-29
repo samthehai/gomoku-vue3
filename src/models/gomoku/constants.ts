@@ -9,3 +9,5 @@ export const COMPUTER_AGENTS = ['PO', 'LEN'];
 export const GAME_MODE = ['ONE_PLAYER', 'TWO_PLAYER'];
 
 export const EMPTY_CELL = '';
+
+export const DEFAULT_BOARD_LENGTH = 14;

@@ -27,6 +27,40 @@ export default class Player {
 }
 
 export class ComputerPlayer extends Player {
+  mode: string = 'normal';
+
+  computing: boolean = false;
+
+  worker = new Worker('./ai-worker.ts');
+
+  constructor(name: string, symbol?: PlayerSymbol, mode?: string) {
+    super(name, symbol);
+    if (mode) this.mode = mode;
+    this.registerEvent();
+  }
+
+  registerEvent(): void {
+    this.worker.onmessage = e => {
+      switch (e.data.type) {
+        case 'decision':
+          // eslint-disable-next-line no-console
+          console.log(e.data);
+          break;
+        case 'starting':
+          this.computing = true;
+          break;
+        default:
+          // eslint-disable-next-line no-console
+          console.log(e.data);
+      }
+    };
+
+    this.worker.postMessage({
+      type: 'initial',
+      mode: this.mode,
+    });
+  }
+
   findBestMove(board: Board): Cell | null {
     let bestMove: Cell | null = null;
     let bestScore = -1000000;
