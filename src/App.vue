@@ -1,29 +1,76 @@
 <template>
-  <Game />
+  <div class="view">
+    <div class="view__nav nav">
+      <div>
+        <router-link to="/">Home</router-link>
+      </div>
+      <div>
+        <router-link to="/gomoku">Gomoku</router-link>
+      </div>
+    </div>
+    <div class="view__content">
+      <router-view />
+    </div>
+  </div>
 </template>
 
-<script lang="ts">
-import { Vue, Options } from 'vue-class-component';
-import Game from './components/Game.vue';
+<style lang="scss">
+.view {
+  &__content {
+    max-width: 600px;
+    margin: 20px auto 0;
 
-@Options({
-  // Specify `components` option.
-  // See Vue.js docs for all available options:
-  // https://vuejs.org/v2/api/#Options-Data
-  components: {
-    Game,
-  },
-})
-export default class App extends Vue {}
-</script>
+    @media screen and (max-width: 600px) {
+      margin-left: 10vw;
+      margin-right: 10vw;
+    }
+  }
+}
+.nav {
+  display: flex;
+  flex-direction: row;
+  color: black;
+  padding: 10px 0;
+  overflow-x: scroll;
+  border: solid 2px gray;
+  border-left-width: 0;
+  border-right-width: 0;
+  font-family: monospace;
+  font-size: 1.5rem;
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+  box-shadow: inset -1px 1px 7px rgba(0, 0, 0, 0.2),
+    inset 1px -1px 1px rgba(0, 0, 0, 0.2), 1px 1px 1px rgba(0, 0, 0, 0.4),
+    1px 1px 1px rgba(0, 0, 0, 0.4), 1px 1px 1px rgba(0, 0, 0, 0.2),
+    -1px 1px 1px rgba(0, 0, 0, 0.1);
+
+  div {
+    &:nth-child(n + 2) {
+      padding-left: 5px;
+    }
+    color: black;
+  }
+
+  a {
+    width: 100%;
+    font-weight: bold;
+    border: solid 1px gray;
+    border-radius: 10px;
+    text-decoration: none;
+    padding: 0 10px;
+    color: black;
+    background-color: white;
+    &.router-link-exact-active {
+      color: white;
+      background: rgb(208, 207, 226);
+      background: linear-gradient(
+        90deg,
+        rgb(208, 207, 226) 0%,
+        rgba(171, 198, 193, 1) 35%,
+        rgba(0, 212, 255, 1) 100%
+      );
+    }
+    cursor: pointer;
+    line-height: 1.5;
+  }
 }
 </style>
