@@ -293,6 +293,7 @@ export default class Gomoku extends Vue {
 <style scoped>
 .outer-container {
   position: relative;
+  height: 100%;
   background: rgba(255, 255, 255, 1);
   border-radius: 10px;
   margin: 0 auto;
