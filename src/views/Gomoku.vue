@@ -88,15 +88,15 @@ const SymbolOptions: ViewOption[] = [
 
 const ComputerAgentOptions: ViewOption[] = [
   {
-    text: 'Novice',
+    text: 'Vid',
     value: 'novice',
   },
   {
-    text: 'Medium',
+    text: 'Len',
     value: 'medium',
   },
   {
-    text: 'Expert',
+    text: 'Po',
     value: 'expert',
   },
 ];
