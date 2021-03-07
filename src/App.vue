@@ -16,9 +16,18 @@
 
 <style lang="scss">
 .view {
+  max-width: 600px;
+  margin: 0 auto;
+  height: 100%;
+  box-shadow: inset -1px 1px 7px rgba(0, 0, 0, 0.2),
+    inset 1px -1px 1px rgba(0, 0, 0, 0.2), 1px 1px 1px rgba(0, 0, 0, 0.4),
+    1px 1px 1px rgba(0, 0, 0, 0.4), 1px 1px 1px rgba(0, 0, 0, 0.2),
+    -1px 1px 1px rgba(0, 0, 0, 0.1);
+
   &__content {
-    max-width: 600px;
+    // max-width: 600px;
     margin: 20px auto 0;
+    height: 100%;
 
     @media screen and (max-width: 600px) {
       margin-left: 10vw;
