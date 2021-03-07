@@ -22,7 +22,7 @@
       />
       <SelectOptions
         v-if="phrase == 'GAME_SELECT_COM'"
-        title="Choose Computer Agent"
+        title="Choose Opponent"
         backButton="display"
         :options="computerAgentOptions"
         @click-item="selectComputerAI"
@@ -113,7 +113,9 @@ export default class Gomoku extends Vue {
 
   mode: GameMode = 'ONE_PLAYER';
 
-  ai: string = 'novice';
+  aiMode: string = 'novice';
+
+  aiName: string = 'Computer';
 
   game: Game | null = null;
 
@@ -226,11 +228,18 @@ export default class Gomoku extends Vue {
     this.phrase = 'GAME_SELECT_COM';
   }
 
-  selectComputerAI(ai: string): void {
-    this.ai = ai;
+  selectComputerAI(aiMode: string): void {
+    this.aiMode = aiMode;
+    const option = this.computerAgentOptions.find(
+      ({ value }) => value === aiMode,
+    );
+
+    if (option) {
+      this.aiName = option.text;
+    }
+
     this.toGameStarter();
   }
-
 
   firstGame(playerOneSymbol: PlayerSymbol): void {
     const playerTwoSymbol =
@@ -243,8 +252,8 @@ export default class Gomoku extends Vue {
             new Player('Player 2', playerTwoSymbol),
           )
         : new Game(
-            new Player('Player 1', playerOneSymbol),
-            new ComputerPlayer('Computer', playerTwoSymbol, this.ai),
+            new Player('You', playerOneSymbol),
+            new ComputerPlayer(this.aiName, playerTwoSymbol, this.aiMode),
           );
 
     this.phrase = 'PLAYING';
