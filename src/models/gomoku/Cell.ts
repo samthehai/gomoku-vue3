@@ -1,4 +1,5 @@
 import { PlayerSymbol } from '@/models/gomoku/types.d';
+import { EMPTY_CELL } from './constants';
 
 export default class Cell {
   x: number;
@@ -17,5 +18,9 @@ export default class Cell {
 
   setValue(value: PlayerSymbol): void {
     this.value = value;
+  }
+
+  isSet(): boolean {
+    return this.value !== EMPTY_CELL;
   }
 }

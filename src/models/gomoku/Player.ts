@@ -1,138 +1,104 @@
 // eslint-disable-next-line max-classes-per-file
 import Board from './Board';
-import Cell from './Cell';
-import { EMPTY_CELL, PLAYER_SYMBOLS } from './constants';
 import { PlayerSymbol } from './types.d';
+import worker from './worker';
 
 export default class Player {
   name: string;
 
-  symbol: PlayerSymbol | null;
+  symbol: PlayerSymbol;
 
   score: number = 0;
 
-  constructor(name: string, symbol?: PlayerSymbol) {
+  constructor(name: string, symbol: PlayerSymbol) {
     this.name = name;
 
-    this.symbol = symbol || null;
+    this.symbol = symbol;
   }
 
   setScore(score: number): void {
     this.score = score;
   }
 
-  setSymbol(symbol: PlayerSymbol) {
-    this.symbol = symbol;
+  // eslint-disable-next-line class-methods-use-this
+  watch(_r: number, _c: number, _color: string): Promise<boolean> {
+    return new Promise(resolve => {
+      resolve(true);
+    });
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  reset(): Promise<boolean> {
+    return new Promise(resolve => {
+      resolve(true);
+    });
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  hardReset(): Promise<boolean> {
+    this.score = 0;
+
+    return this.reset();
   }
 }
 
 export class ComputerPlayer extends Player {
-  mode: string = 'normal';
+  mode: string;
 
-  computing: boolean = false;
-
-  worker = new Worker('./ai-worker.ts');
-
-  constructor(name: string, symbol?: PlayerSymbol, mode?: string) {
+  constructor(name: string, symbol: PlayerSymbol, mode: string) {
     super(name, symbol);
-    if (mode) this.mode = mode;
-    this.registerEvent();
+    this.mode = mode;
+    worker.send({ type: 'init', color: symbol, mode });
   }
 
-  registerEvent(): void {
-    this.worker.onmessage = e => {
-      switch (e.data.type) {
-        case 'decision':
-          // eslint-disable-next-line no-console
-          console.log(e.data);
-          break;
-        case 'starting':
-          this.computing = true;
-          break;
-        default:
-          // eslint-disable-next-line no-console
-          console.log(e.data);
-      }
-    };
-
-    this.worker.postMessage({
-      type: 'initial',
-      mode: this.mode,
+  // eslint-disable-next-line class-methods-use-this
+  watch(r: number, c: number, color: string): Promise<boolean> {
+    return worker.send({
+      type: 'watch',
+      r,
+      c,
+      color,
     });
   }
 
-  findBestMove(board: Board): Cell | null {
-    let bestMove: Cell | null = null;
-    let bestScore = -1000000;
-
-    board.cells.forEach((row, indexRow) => {
-      row.forEach((_, indexCell) => {
-        if (board.cells[indexRow][indexCell].value === EMPTY_CELL) {
-          const newBoard = new Board(board.length, board.cells);
-          newBoard.cells[indexRow][indexCell].setValue(this.symbol || '');
-
-          const newScore = this.minimax(newBoard, 0, false, -1000000, 1000000);
-
-          if (newScore > bestScore) {
-            bestScore = newScore;
-            bestMove = new Cell(indexRow, indexCell);
-          }
-        }
-      });
-    });
-
-    return bestMove;
+  // eslint-disable-next-line class-methods-use-this
+  reset(): Promise<boolean> {
+    return worker.send({ type: 'init', color: this.symbol, mode: this.mode });
   }
 
-  minimax(board: Board, depth: number, isMax: boolean, alpha: number, beta: number): number {
-    const winner = board.checkWin();
-    if (winner === 'PLAYER_2') return 10 - depth;
-    if (winner === 'PLAYER_1') return -10 + depth;
+  // eslint-disable-next-line class-methods-use-this
+  hardReset(): Promise<boolean> {
+    this.score = 0;
 
-    if (!board.isMovesLeft()) return 4;
-    if (depth >= 1) return 2;
+    return this.reset();
+  }
 
-    if (isMax) {
-      let bestScore = -1000000;
-
-      for (let r = 0; r < board.length; r += 1) {
-        for (let c = 0; c < board.length; c += 1) {
-          if (board.cells[r][c].value === EMPTY_CELL) {
-            const newBoard = new Board(board.length, board.cells);
-            newBoard.cells[r][c].setValue(this.symbol || '');
-
-            const newScore = this.minimax(newBoard, depth + 1, !isMax, alpha, beta);
-
-            if (newScore > bestScore) bestScore = newScore;
-            // eslint-disable-next-line no-param-reassign
-            if (bestScore > alpha) alpha = bestScore;
-            if (alpha >= beta) {
-              return bestScore;
-            }
-          }
-        }
-      }
-
-      return bestScore;
+  // eslint-disable-next-line class-methods-use-this
+  async findBestMove(board: Board): Promise<{ r: number; c: number } | null> {
+    if (board.filledNum === 0) {
+      return { r: 7, c: 7 };
     }
-    let bestScore = 1000000;
 
-    for (let r = 0; r < board.length; r += 1) {
-      for (let c = 0; c < board.length; c += 1) {
-        if (board.cells[r][c].value === EMPTY_CELL) {
-          const newBoard = new Board(board.length, board.cells);
-          newBoard.cells[r][c].setValue(PLAYER_SYMBOLS.find(item => item !== this.symbol) || '');
+    if (board.filledNum === 1) {
+      const move = [
+        { r: 6, c: 6 },
+        { r: 6, c: 7 },
+        { r: 6, c: 8 },
+        { r: 7, c: 6 },
+        { r: 7, c: 7 },
+        { r: 7, c: 8 },
+        { r: 8, c: 6 },
+        { r: 8, c: 7 },
+        { r: 8, c: 8 },
+      ].find(({ r, c }) => !board.isSet(r, c));
 
-          const newScore = this.minimax(newBoard, depth + 1, !isMax, alpha, beta);
-
-          if (newScore < bestScore) bestScore = newScore;
-          // eslint-disable-next-line no-param-reassign
-          if (bestScore < beta) beta = bestScore;
-          if (alpha >= beta) return bestScore;
-        }
+      if (move) {
+        return move;
       }
     }
 
-    return bestScore;
+    return worker.send({
+      type: 'compute',
+    });
   }
 }

@@ -1,7 +1,5 @@
-import { constant } from 'lodash';
 import Board from './Board';
-import Cell from './Cell';
-import { DEFAULT_BOARD_LENGTH, EMPTY_CELL } from './constants';
+import { DEFAULT_BOARD_LENGTH } from './constants';
 import Player, { ComputerPlayer } from './Player';
 import { PlayerSymbol } from './types.d';
 
@@ -11,8 +9,6 @@ export default class Game {
   player2: Player;
 
   board: Board;
-
-  round: number;
 
   turn: PlayerSymbol = 'X';
 
@@ -24,13 +20,11 @@ export default class Game {
     this.player1 = player1;
     this.player2 = player2;
     this.board = new Board(boardLength || DEFAULT_BOARD_LENGTH);
-    this.round = 0;
   }
 
   initialize(): void {
     this.board.initialize();
     this.winner = null;
-    this.round = 0;
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -54,7 +48,6 @@ export default class Game {
     setTimeout(() => {
       if (this.isComputerPlayer(this.currentPlayer())) {
         this.computerTurn();
-        this.endTurn();
       }
     }, 0);
   }
@@ -75,25 +68,28 @@ export default class Game {
       return;
     }
 
-    let nextMove: Cell | null = null;
-    nextMove = (currentPlayer as ComputerPlayer).findBestMove(this.board);
-    if (!nextMove) {
-      return;
-    }
+    (currentPlayer as ComputerPlayer)
+      .findBestMove(this.board)
+      .then((move: { r: number; c: number } | null) => {
+        if (!move) {
+          return;
+        }
 
-    this.board.cells[nextMove.x][nextMove.y].setValue(currentPlayer.symbol || '');
+        this.board.setGo(move.r, move.c, currentPlayer.symbol);
+        this.player1.watch(move.r, move.c, currentPlayer.symbol);
+        this.player2.watch(move.r, move.c, currentPlayer.symbol);
+        this.endTurn();
+      });
   }
 
-  playerTurn(position: { x: number; y: number }): void {
-    const { x, y } = position;
-    if (
-      this.board.cells[x][y].value === EMPTY_CELL &&
-      this.playing &&
-      !this.isComputerPlayer(this.currentPlayer())
-    ) {
-      const symbol = this.turn;
+  playerTurn(position: { r: number; c: number }): void {
+    const { r, c } = position;
 
-      this.board.cells[x][y].setValue(symbol);
+    if (!this.board.isSet(r, c) && this.playing && !this.isComputerPlayer(this.currentPlayer())) {
+      const symbol = this.turn;
+      this.board.setGo(r, c, symbol);
+      this.player1.watch(r, c, symbol);
+      this.player2.watch(r, c, symbol);
       this.endTurn();
     }
   }
@@ -122,7 +118,6 @@ export default class Game {
     setTimeout(() => {
       if (this.isComputerPlayer(this.currentPlayer())) {
         this.computerTurn();
-        this.endTurn();
       }
     }, 0);
   }

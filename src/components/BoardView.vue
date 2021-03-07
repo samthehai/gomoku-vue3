@@ -12,7 +12,7 @@
         v-for="(cell, cellIndex) in row"
         v-bind:key="rowIndex + '_' + cellIndex"
         class="board__cell"
-        @click="$emit('click-cell', { x: rowIndex, y: cellIndex })"
+        @click="$emit('click-cell', { r: rowIndex, c: cellIndex })"
       >
         {{ cell.value }}
       </div>

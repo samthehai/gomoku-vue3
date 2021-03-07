@@ -28,7 +28,6 @@
         @click-item="selectComputerAI"
         @click-back="toGameChoice"
       />
-
       <div v-if="shouldShowGameBoard" class="game-board">
         <BoardView
           :board="game?.board.cells"
@@ -55,8 +54,6 @@ import {
   GamePhrase,
   // eslint-disable-next-line no-unused-vars
   PlayerSymbol,
-  // eslint-disable-next-line no-unused-vars
-  ComputerAgent,
   // eslint-disable-next-line no-unused-vars
   GameMode,
 } from '@/models/gomoku/types.d';
@@ -91,12 +88,16 @@ const SymbolOptions: ViewOption[] = [
 
 const ComputerAgentOptions: ViewOption[] = [
   {
-    text: 'Po',
-    value: 'PO' as ComputerAgent,
+    text: 'Novice',
+    value: 'novice',
   },
   {
-    text: 'Len',
-    value: 'LEN' as ComputerAgent,
+    text: 'Medium',
+    value: 'medium',
+  },
+  {
+    text: 'Expert',
+    value: 'expert',
   },
 ];
 
@@ -112,6 +113,8 @@ export default class Gomoku extends Vue {
 
   mode: GameMode = 'ONE_PLAYER';
 
+  ai: string = 'novice';
+
   game: Game | null = null;
 
   initializeGame(): void {
@@ -120,6 +123,8 @@ export default class Gomoku extends Vue {
     }
 
     this.game.board.initialize();
+    this.game.player1.reset();
+    this.game.player2.reset();
     this.game.winner = null;
   }
 
@@ -200,17 +205,11 @@ export default class Gomoku extends Vue {
 
   chooseMode(mode: GameMode) {
     this.mode = mode;
-
+    this.toGameStarter();
     if (this.mode === 'TWO_PLAYER') {
-      this.game = new Game(new Player('Player 1'), new Player('Player 2'));
       this.toGameStarter();
       return;
     }
-
-    this.game = new Game(
-      new Player('Player 1'),
-      new ComputerPlayer('Computer'),
-    );
 
     this.toSelectComputer();
   }
@@ -219,41 +218,44 @@ export default class Gomoku extends Vue {
     this.phrase = 'GAME_STARTER';
   }
 
-  toSelectComputer() {
-    this.phrase = 'GAME_SELECT_COM';
-  }
-
   toGameChoice() {
     this.phrase = 'GAME_CHOICE';
   }
 
-  firstGame(playerOneSymbol: PlayerSymbol): void {
-    if (!this.game || !this.game.player1 || !this.game.player2) {
-      return;
-    }
+  toSelectComputer() {
+    this.phrase = 'GAME_SELECT_COM';
+  }
 
-    this.game.player1.symbol = playerOneSymbol;
-    this.game.player2.symbol =
-      PLAYER_SYMBOLS.find((x) => x !== playerOneSymbol) || EMPTY_STRING;
+  selectComputerAI(ai: string): void {
+    this.ai = ai;
+    this.toGameStarter();
+  }
+
+
+  firstGame(playerOneSymbol: PlayerSymbol): void {
+    const playerTwoSymbol =
+      PLAYER_SYMBOLS.find((x) => x !== playerOneSymbol) || 'X';
+
+    this.game =
+      this.mode === 'TWO_PLAYER'
+        ? new Game(
+            new Player('Player 1', playerOneSymbol),
+            new Player('Player 2', playerTwoSymbol),
+          )
+        : new Game(
+            new Player('Player 1', playerOneSymbol),
+            new ComputerPlayer('Computer', playerTwoSymbol, this.ai),
+          );
 
     this.phrase = 'PLAYING';
     this.game.start();
   }
 
-  playerTurn(position: { x: number; y: number }): void {
+  playerTurn(position: { r: number; c: number }): void {
     if (!this.game) {
       return;
     }
     this.game.playerTurn(position);
-  }
-
-  selectComputerAI(name: ComputerAgent): void {
-    if (!this.game || !this.game.player1 || !this.game.player2) {
-      return;
-    }
-
-    this.game.player2.name = name;
-    this.toGameStarter();
   }
 
   resetGame(): void {
@@ -261,8 +263,8 @@ export default class Gomoku extends Vue {
       return;
     }
 
-    this.game.player1.score = 0;
-    this.game.player2.score = 0;
+    this.game.player1.hardReset();
+    this.game.player2.hardReset();
     this.game.board.initialize();
     this.phrase = 'GAME_CHOICE';
   }

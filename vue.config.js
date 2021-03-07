@@ -5,6 +5,8 @@ module.exports = {
       args[0].title = 'Gomoku Game';
       return args;
     });
+
+    config.output.globalObject('this');
   },
   // ...other vue-cli plugin options...
   pwa: {

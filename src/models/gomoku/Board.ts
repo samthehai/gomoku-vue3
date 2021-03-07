@@ -1,8 +1,8 @@
-import Cell from '@/models/gomoku/Cell';
 import { PlayerSymbol } from '@/models/gomoku/types.d';
 import { EMPTY_CELL } from '@/models/gomoku/constants';
 
 import clonedeep from 'lodash/cloneDeep';
+import Cell from './Cell';
 
 // prettier-ignore
 export const winPattern = [
@@ -17,12 +17,21 @@ export const winPattern = [
 export default class Board {
   length: number;
 
+  filledNum: number = 0;
+
   cells!: Cell[][];
 
   constructor(length: number, cells?: Cell[][]) {
     this.length = length;
-    if (cells) this.cells = clonedeep(cells);
-    else this.initialize();
+    if (cells) {
+      this.cells = clonedeep(cells);
+    } else {
+      this.initialize();
+    }
+  }
+
+  clone(): Board {
+    return new Board(this.length, this.cells);
   }
 
   initialize(): void {
@@ -76,5 +85,14 @@ export default class Board {
 
   isMovesLeft(): boolean {
     return this.cells.some(row => row.some(cell => cell.value === EMPTY_CELL));
+  }
+
+  setGo(r: number, c: number, symbol: PlayerSymbol): void {
+    this.cells[r][c].setValue(symbol);
+    this.filledNum += 1;
+  }
+
+  isSet(r: number, c: number): boolean {
+    return this.cells[r][c].isSet();
   }
 }
